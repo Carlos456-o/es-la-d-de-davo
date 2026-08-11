@@ -44,6 +44,10 @@
                             <label class="form-label">Raza</label>
                             <input type="text" class="form-control" id="raza" required placeholder="Ej: Siames">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Propietario</label>
+                            <input type="text" class="form-control" id="propietario" required placeholder="Ej: Juan Pérez">
+                        </div>
                         <button type="submit" class="btn btn-primary w-100">Registrar Gato</button>
                     </form>
                     <!-- Mensaje del backend -->
@@ -64,7 +68,8 @@
                 nombre: document.getElementById("nombre").value.trim(),
                 edad: Number(document.getElementById("edad").value),
                 peso: Number(document.getElementById("peso").value),
-                raza: document.getElementById("raza").value.trim()
+                raza: document.getElementById("raza").value.trim(),
+                propietario: document.getElementById("propietario").value.trim()
             };
 
             const resultadoDiv = document.getElementById("resultado");
