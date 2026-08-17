@@ -19,6 +19,13 @@
         #resultado {
             display: none;
         }
+        #preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -45,13 +52,14 @@
                             <input type="text" class="form-control" id="raza" required placeholder="Ej: Siames">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Propietario</label>
-                            <input type="text" class="form-control" id="propietario" required placeholder="Ej: Juan Pérez">
+                            <label class="form-label">Imagen del gato</label>
+                            <input type="file" class="form-control" id="imagen" accept="image/*" required>
+                            <img id="preview" alt="Vista previa">
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Registrar Gato</button>
                     </form>
                     <!-- Mensaje del backend -->
-                    <div id="resultado" class="alert alert-success mt-4" role="alert"></div>
+                    <div id="resultado" class="alert mt-4" role="alert"></div>
                 </div>
             </div>
         </div>
@@ -59,40 +67,57 @@
 
     <script>
         // Cambia esta URL por la de tu backend en Render
-        const BACKEND_URL = "https://es-la-d-de-davo.onrender.com/gato";
+        const BACKEND_URL = "https://backend-gatss-gofx.onrender.com/gato";
+
+        document.getElementById("imagen").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            const preview = document.getElementById("preview");
+
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = "block";
+            } else {
+                preview.src = "";
+                preview.style.display = "none";
+            }
+        });
 
         document.getElementById("formGato").addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const datos = {
-                nombre: document.getElementById("nombre").value.trim(),
-                edad: Number(document.getElementById("edad").value),
-                peso: Number(document.getElementById("peso").value),
-                raza: document.getElementById("raza").value.trim(),
-                propietario: document.getElementById("propietario").value.trim()
-            };
-
             const resultadoDiv = document.getElementById("resultado");
             resultadoDiv.style.display = "none";
+
+            const formData = new FormData();
+            formData.append("nombre", document.getElementById("nombre").value.trim());
+            formData.append("edad", document.getElementById("edad").value);
+            formData.append("peso", document.getElementById("peso").value);
+            formData.append("raza", document.getElementById("raza").value.trim());
+
+            const imagenInput = document.getElementById("imagen");
+            if (imagenInput.files.length > 0) {
+                formData.append("imagen", imagenInput.files[0]);
+            }
 
             try {
                 const respuesta = await fetch(BACKEND_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(datos)
+                    body: formData
                 });
 
                 const data = await respuesta.json();
 
                 if (respuesta.ok) {
                     resultadoDiv.className = "alert alert-success mt-4";
-                    resultadoDiv.textContent = data.mensaje;
+                    resultadoDiv.innerHTML = data.mensaje +
+                        (data.imagenUrl ? '<br><img src="' + data.imagenUrl + '" style="max-width:100%;margin-top:10px;border-radius:8px;">' : "");
                 } else {
                     resultadoDiv.className = "alert alert-danger mt-4";
                     resultadoDiv.textContent = data.mensaje || "Error al registrar el gato";
                 }
                 resultadoDiv.style.display = "block";
             } catch (error) {
+                console.error(error);
                 resultadoDiv.className = "alert alert-danger mt-4";
                 resultadoDiv.textContent = "Error de conexión con el servidor.";
                 resultadoDiv.style.display = "block";
