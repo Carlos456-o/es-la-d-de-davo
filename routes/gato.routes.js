@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { registrarGato, obtenerGatos } from "../controllers/gato.controller.js";
+import { registrarGato, obtenerGatos, actualizarGato } from "../controllers/gato.controller.js";
 
 const router = express.Router();
 
@@ -15,6 +15,12 @@ router.post(
   "/gato",
   upload.single("imagen"),
   registrarGato
+);
+
+router.put(
+  "/gato/:id",
+  upload.single("imagen"), // la imagen es opcional
+  actualizarGato
 );
 
 router.get("/gatos", obtenerGatos);
