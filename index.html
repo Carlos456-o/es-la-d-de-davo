@@ -33,7 +33,7 @@
         }
         #preview {
             max-width: 100%;
-            max-height: 180px;
+            max-height: 100px;
             margin-top: 10px;
             border-radius: 8px;
             display: none;
@@ -53,6 +53,8 @@
                 <div class="card p-4">
                     <h2 class="text-center mb-4">Registro de Gato</h2>
                     <form id="formGato">
+                        <!-- Campo oculto para saber si estamos editando -->
+                        <input type="hidden" id="gatoId" value="">
                         <div class="mb-3">
                             <label class="form-label">Nombre</label>
                             <input type="text" class="form-control" id="nombre" required placeholder="Ej: Michi">
@@ -71,10 +73,14 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Imagen del gato</label>
-                            <input type="file" class="form-control" id="imagen" accept="image/*" required>
+                            <input type="file" class="form-control" id="imagen" accept="image/*">
                             <img id="preview" alt="Vista previa">
+                            <small class="text-muted" id="ayudaImagen">
+                                Al editar, si no seleccionas una nueva imagen se mantiene la actual.
+                            </small>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Registrar Gato</button>
+                        <button type="submit" class="btn btn-primary w-100" id="btnSubmit">Registrar Gato</button>
+                        <button type="button" class="btn btn-outline-secondary w-100 mt-2 d-none" id="btnCancelar">Cancelar edición</button>
                     </form>
                     <div id="resultado" class="alert mt-4" role="alert"></div>
                 </div>
@@ -96,7 +102,7 @@
         // URL de tu backend en Render
         const BACKEND_URL = "https://es-la-d-de-davo.onrender.com";
 
-        // ========= Vista previa de imagen =========
+        // ========== Vista previa de imagen ==========
         document.getElementById("imagen").addEventListener("change", (e) => {
             const file = e.target.files[0];
             const preview = document.getElementById("preview");
@@ -109,11 +115,15 @@
             }
         });
 
-        // ========= Registrar gato =========
+        // ========== Registrar / Actualizar gato ==========
         document.getElementById("formGato").addEventListener("submit", async (e) => {
             e.preventDefault();
+
             const resultadoDiv = document.getElementById("resultado");
             resultadoDiv.style.display = "none";
+
+            const gatoId = document.getElementById("gatoId").value;
+            const esEdicion = gatoId !== "";
 
             const formData = new FormData();
             formData.append("nombre", document.getElementById("nombre").value.trim());
@@ -127,29 +137,42 @@
             }
 
             try {
-                const respuesta = await fetch(`${BACKEND_URL}/gato`, {
-                    method: "POST",
-                    body: formData
-                });
+                let respuesta;
+
+                if (esEdicion) {
+                    // PUT -> actualizar
+                    respuesta = await fetch(`${BACKEND_URL}/gato/${gatoId}`, {
+                        method: "PUT",
+                        body: formData,
+                    });
+                } else {
+                    // POST -> crear (imagen obligatoria)
+                    if (imagenInput.files.length === 0) {
+                        resultadoDiv.className = "alert alert-danger mt-4";
+                        resultadoDiv.textContent = "La imagen es obligatoria al registrar un gato nuevo.";
+                        resultadoDiv.style.display = "block";
+                        return;
+                    }
+                    respuesta = await fetch(`${BACKEND_URL}/gato`, {
+                        method: "POST",
+                        body: formData,
+                    });
+                }
 
                 const data = await respuesta.json();
 
                 if (respuesta.ok) {
                     resultadoDiv.className = "alert alert-success mt-4";
-                    resultadoDiv.innerHTML = data.mensaje +
-                        (data.imagenUrl ? `<br><img src="${data.imagenUrl}" style="max-width:100%;margin-top:10px;border-radius:8px;">` : "");
+                    resultadoDiv.innerHTML = data.mensaje + (data.imagenUrl ? `<br><img src="${data.imagenUrl}" style="max-width:100%;margin-top:10px;border-radius:8px;">` : "");
 
-                    // Limpiar formulario
-                    document.getElementById("formGato").reset();
-                    document.getElementById("preview").style.display = "none";
-
-                    // Recargar la lista de gatos
+                    // Limpiar formulario y salir del modo edición
+                    limpiarFormulario();
                     cargarGatos();
                 } else {
                     resultadoDiv.className = "alert alert-danger mt-4";
-                    resultadoDiv.textContent = data.mensaje || "Error al registrar el gato";
-                    resultadoDiv.style.display = "block";
+                    resultadoDiv.textContent = data.mensaje || "Error al procesar la solicitud";
                 }
+                resultadoDiv.style.display = "block";
             } catch (error) {
                 console.error(error);
                 resultadoDiv.className = "alert alert-danger mt-4";
@@ -158,7 +181,39 @@
             }
         });
 
-        // ========= Cargar y mostrar gatos =========
+        // ========== Cargar datos de un gato en el formulario ==========
+        function editarGato(gato) {
+            document.getElementById("gatoId").value = gato.id;
+            document.getElementById("nombre").value = gato.nombre;
+            document.getElementById("edad").value = gato.edad;
+            document.getElementById("peso").value = gato.peso;
+            document.getElementById("raza").value = gato.raza;
+
+            // No cargamos la imagen en el input file (no se puede por seguridad del navegador)
+            document.getElementById("imagen").value = "";
+            document.getElementById("preview").style.display = "none";
+
+            // Mostrar botón cancelar
+            document.getElementById("btnCancelar").classList.remove("d-none");
+
+            // Scroll suave al formulario
+            document.querySelector(".card").scrollIntoView({ behavior: "smooth" });
+        }
+
+        // ========== Limpiar formulario ==========
+        function limpiarFormulario() {
+            document.getElementById("formGato").reset();
+            document.getElementById("gatoId").value = "";
+            document.getElementById("preview").style.display = "none";
+            document.getElementById("btnCancelar").classList.add("d-none");
+        }
+
+        // Botón Cancelar edición
+        document.getElementById("btnCancelar").addEventListener("click", () => {
+            limpiarFormulario();
+        });
+
+        // ========== Cargar y mostrar gatos ==========
         async function cargarGatos() {
             const contenedor = document.getElementById("listaGatos");
             contenedor.innerHTML = '<div class="col-12 loading">Cargando gatos...</div>';
@@ -185,7 +240,7 @@
                     <div class="col-12 col-sm-6 col-xl-4">
                         <div class="card gato-card h-100">
                             <img src="${gato.imagenUrl}" class="card-img-top gato-img" alt="${gato.nombre}" onerror="this.src='https://placehold.co/400x300?text=Sin+imagen'">
-                            <div class="card-body">
+                            <div class="card-body d-flex flex-column">
                                 <h5 class="card-title mb-1">${gato.nombre}</h5>
                                 <p class="card-text mb-1">
                                     <small class="text-muted">
@@ -194,14 +249,16 @@
                                 </p>
                                 <p class="card-text">
                                     <small class="text-muted">
-                                        Registrado: ${new Date(gato.fecha).toLocaleDateString("es-ES")}
+                                        Registrado: ${new Date(gato.fecha).toLocaleDateString('es-ES')}
                                     </small>
                                 </p>
+                                <button class="btn btn-sm btn-outline-primary mt-auto" onclick='editarGato(${JSON.stringify(gato)})'>
+                                    Actualizar
+                                </button>
                             </div>
                         </div>
                     </div>
                 `).join("");
-
             } catch (error) {
                 console.error(error);
                 contenedor.innerHTML = `
