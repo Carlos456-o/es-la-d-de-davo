@@ -237,27 +237,32 @@
                 }
 
                 contenedor.innerHTML = gatos.map(gato => `
-                    <div class="col-12 col-sm-6 col-xl-4">
-                        <div class="card gato-card h-100">
-                            <img src="${gato.imagenUrl}" class="card-img-top gato-img" alt="${gato.nombre}" onerror="this.src='https://placehold.co/400x300?text=Sin+imagen'">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title mb-1">${gato.nombre}</h5>
-                                <p class="card-text mb-1">
-                                    <small class="text-muted">
-                                        ${gato.raza} - ${gato.edad} años - ${gato.peso} kg
-                                    </small>
-                                </p>
-                                <p class="card-text">
-                                    <small class="text-muted">
-                                        Registrado: ${new Date(gato.fecha).toLocaleDateString('es-ES')}
-                                    </small>
-                                </p>
-                                <button class="btn btn-sm btn-outline-primary mt-auto" onclick='editarGato(${JSON.stringify(gato)})'>
-                                    Actualizar
-                                </button>
-                            </div>
+                  <div class="col-12 col-sm-6 col-xl-4">
+                    <div class="card gato-card h-100">
+                      <img src="${gato.imagenUrl}" class="card-img-top gato-img" alt="${gato.nombre}" onerror="this.src='https://placehold.co/400x300?text=Sin+imagen'">
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="card-title mb-1">${gato.nombre}</h5>
+                        <p class="card-text mb-1">
+                          <small class="text-muted">
+                            ${gato.raza} · ${gato.edad} años · ${gato.peso} kg
+                          </small>
+                        </p>
+                        <p class="card-text">
+                          <small class="text-muted">
+                            Registrado: ${new Date(gato.fecha).toLocaleDateString('es-ES')}
+                          </small>
+                        </p>
+                        <div class="mt-auto d-flex gap-2">
+                          <button class="btn btn-sm btn-outline-primary flex-fill" onclick='editarGato(${JSON.stringify(gato)})'>
+                            Actualizar
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger flex-fill" onclick="eliminarGato('${gato.id}', '${gato.nombre}')">
+                            Eliminar
+                          </button>
                         </div>
+                      </div>
                     </div>
+                  </div>
                 `).join("");
             } catch (error) {
                 console.error(error);
@@ -268,6 +273,30 @@
                         </div>
                     </div>`;
             }
+        }
+
+        // ========== Eliminar gato ==========
+        async function eliminarGato(id, nombre) {
+          const confirmar = confirm(`¿Estás seguro de eliminar a "${nombre}"?`);
+          if (!confirmar) return;
+
+          try {
+            const respuesta = await fetch(`${BACKEND_URL}/gato/${id}`, {
+              method: "DELETE"
+            });
+
+            const data = await respuesta.json();
+
+            if (respuesta.ok) {
+              alert(data.mensaje);
+              cargarGatos(); // recargar la lista
+            } else {
+              alert(data.mensaje || "Error al eliminar el gato");
+            }
+          } catch (error) {
+            console.error(error);
+            alert("Error de conexión con el servidor.");
+          }
         }
 
         // Botón de recargar
