@@ -100,6 +100,52 @@ export const obtenerGatos = async (req, res) => {
   }
 };
 
+export const buscarGatos = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (typeof q !== "string" || q.trim() === "") {
+      return res.status(400).json({
+        mensaje: "Debes enviar un término de búsqueda (parámetro q).",
+      });
+    }
+
+    const termino = q.trim().toLowerCase();
+    const snapshot = await db.collection("gatos").orderBy("fecha", "desc").get();
+
+    const gatos = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((gato) => {
+        const nombre = String(gato.nombre || "").toLowerCase();
+        const raza = String(gato.raza || "").toLowerCase();
+        const edad = String(gato.edad || "");
+        const peso = String(gato.peso || "");
+        const fecha = gato.fecha
+          ? new Date(gato.fecha).toLocaleDateString("es-ES").toLowerCase()
+          : "";
+
+        return (
+          nombre.includes(termino) ||
+          raza.includes(termino) ||
+          edad.includes(termino) ||
+          peso.includes(termino) ||
+          fecha.includes(termino)
+        );
+      });
+
+    res.status(200).json(gatos);
+  } catch (error) {
+    console.error("Error al buscar gatos:", error);
+    res.status(500).json({
+      mensaje: "Error al buscar los gatos.",
+      error: error.message,
+    });
+  }
+};
+
 export const actualizarGato = async (req, res) => {
   try {
     const { id } = req.params;
