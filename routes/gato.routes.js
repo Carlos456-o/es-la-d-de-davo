@@ -7,8 +7,11 @@ import {
   eliminarGato,
   buscarGatos,
 } from "../controllers/gato.controller.js";
+import { capturarInfoSolicitud } from "../middlewares/auditoria.js";
 
 const router = express.Router();
+
+router.use(capturarInfoSolicitud); // aplica a todas las rutas de este router
 
 const upload = multer({
   storage: multer.memoryStorage(),
