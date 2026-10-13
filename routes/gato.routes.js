@@ -6,6 +6,7 @@ import {
   actualizarGato,
   eliminarGato,
   buscarGatos,
+  enviarGatosPorEmail,
 } from "../controllers/gato.controller.js";
 import { capturarInfoSolicitud } from "../middlewares/auditoria.js";
 
@@ -35,6 +36,8 @@ router.put(
 router.get("/gatos", obtenerGatos);
 
 router.get("/gatos/buscar", buscarGatos);
+
+router.get("/gatos/enviar-email", enviarGatosPorEmail);
 
 router.delete("/gato/:id", eliminarGato);
 

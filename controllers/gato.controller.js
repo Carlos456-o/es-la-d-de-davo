@@ -1,5 +1,6 @@
 import db from "../firebase.js";
 import supabase from "../supabase.js";
+import { enviarListadoGatos } from "../utils/emailjs.js";
 
 export const guardarAuditoria = async ({
   accion,
@@ -287,6 +288,29 @@ export const eliminarGato = async (req, res) => {
     console.error("Error al eliminar gato:", error);
     res.status(500).json({
       mensaje: "Error al eliminar el gato.",
+      error: error.message,
+    });
+  }
+};
+
+export const enviarGatosPorEmail = async (req, res) => {
+  try {
+    const snapshot = await db.collection("gatos").orderBy("fecha", "desc").get();
+    const gatos = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    await enviarListadoGatos(gatos);
+
+    res.status(200).json({
+      mensaje: `Se envió el listado de ${gatos.length} gato(s) por correo.`,
+      total: gatos.length,
+    });
+  } catch (error) {
+    console.error("Error al enviar gatos por email:", error);
+    res.status(500).json({
+      mensaje: "Error al enviar el listado de gatos por correo.",
       error: error.message,
     });
   }

@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Carlos456-o/es-la-d-de-davo#readme",
   "dependencies": {
+    "@emailjs/nodejs": "^5.0.2",
     "@supabase/supabase-js": "^2.112.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
