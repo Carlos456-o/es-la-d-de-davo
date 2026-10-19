@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";  //Para que el frontend pueda llamar
 import gatoRoutes from "./routes/gato.routes.js";
 import climaRoutes from "./routes/clima.routes.js";
+import estadisticasRoutes from "./routes/estadisticas.routes.js";
 import rateLimit from "express-rate-limit";
 import db from "./firebase.js";  // Para el registro de la bitácora
 
@@ -42,6 +43,7 @@ app.use("/gatos", limiterGatos);
 // Rutas
 app.use(gatoRoutes);
 app.use(climaRoutes);
+app.use(estadisticasRoutes);
 
 // 404
 app.use((req, res) => {
