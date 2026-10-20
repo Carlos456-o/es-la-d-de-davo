@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
+import db from "../firebase.js";
 import { calcularEstadisticas } from "./estadisticas.controller.js";
 
 export const exportarEstadisticasExcel = async (req, res) => {
@@ -433,5 +434,71 @@ export const exportarEstadisticasPDF = async (req, res) => {
         error: error.message,
       });
     }
+  }
+};
+
+export const exportarGatosCSV = async (req, res) => {
+  try {
+    const snapshot = await db.collection("gatos").orderBy("fecha", "desc").get();
+
+    const gatos = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // Función para escapar correctamente valores CSV
+    const escapar = (valor) => {
+      if (valor === null || valor === undefined) return "";
+      const str = String(valor);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Encabezados del CSV
+    const encabezados = ["ID", "Nombre", "Edad", "Peso (kg)", "Raza", "URL Imagen", "Fecha de registro"];
+
+    const lineas = [encabezados.join(",")];
+
+    // Filas de datos
+    gatos.forEach((gato) => {
+      const fecha = gato.fecha
+        ? new Date(gato.fecha).toLocaleString("es-ES")
+        : "";
+
+      const fila = [
+        escapar(gato.id),
+        escapar(gato.nombre),
+        gato.edad ?? "",
+        gato.peso ?? "",
+        escapar(gato.raza),
+        escapar(gato.imagenUrl),
+        escapar(fecha),
+      ];
+
+      lineas.push(fila.join(","));
+    });
+
+    const csvContent = lineas.join("\n");
+
+    const nombreArchivo = `gatos-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    // Headers para forzar la descarga
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${nombreArchivo}"`
+    );
+
+    // BOM UTF-8 para que Excel muestre bien los acentos
+    res.write("\uFEFF");
+    res.end(csvContent);
+  } catch (error) {
+    console.error("Error al exportar gatos a CSV:", error);
+    res.status(500).json({
+      mensaje: "Error al generar el archivo CSV de gatos.",
+      error: error.message,
+    });
   }
 };
