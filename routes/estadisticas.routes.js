@@ -4,6 +4,9 @@ import {
   exportarEstadisticasExcel,
   exportarEstadisticasPDF,
   exportarGatosCSV,
+  exportarGatosLista,
+  exportarGatosJSON,
+  exportarGatosSQL,
 } from "../controllers/exportacion.controller.js";
 import { capturarInfoSolicitud } from "../middlewares/auditoria.js";
 
@@ -22,5 +25,14 @@ router.get("/estadisticas/pdf", exportarEstadisticasPDF);
 
 // Descarga el listado de gatos en CSV
 router.get("/estadisticas/csv", exportarGatosCSV);
+
+// Listado de gatos en texto plano
+router.get("/lista", exportarGatosLista);
+
+// Colección de gatos en JSON
+router.get("/json", exportarGatosJSON);
+
+// Script SQL con CREATE TABLE e INSERTs
+router.get("/sql", exportarGatosSQL);
 
 export default router;
